@@ -271,4 +271,12 @@ body{background:linear-gradient(180deg,#e9f8fb 0,#f4f8fa 28%,#eef8f9 100%)}
 /* Keep one clear Point Shop card on My Page; older recovery cards are redundant. */
 #reliableMyPage{display:none!important}
 #firstRunMyPage>section:first-child{display:none!important}
-</style></body></html>
+</style><script>
+/* Final My Page de-duplicator: retain only the first card/button of each kind. */
+(function(){
+  var shop='\ud3ec\uc778\ud2b8 \uc0c1\uc810', participation='\ub098\uc758 \ucc38\uc5ec \uc815\ubcf4', reset='\ub370\ubaa8 \ub370\uc774\ud130 \ucd08\uae30\ud654';
+  function keepFirst(nodes){Array.prototype.slice.call(nodes,1).forEach(function(n){n.remove()})}
+  function clean(){var app=document.getElementById('app'),tab=document.querySelector('[data-page="my"].active');if(!app||!tab)return;var cards=Array.prototype.slice.call(app.querySelectorAll('.card'));keepFirst(cards.filter(function(c){var h=c.querySelector('h2');return h&&h.textContent.trim()===shop}));keepFirst(cards.filter(function(c){var h=c.querySelector('h2');return h&&h.textContent.trim()===participation}));keepFirst(Array.prototype.slice.call(app.querySelectorAll('button')).filter(function(b){return b.textContent.trim()===reset}));}
+  document.addEventListener('click',function(){setTimeout(clean,100)});setInterval(clean,300);setTimeout(clean,0);
+}());
+</script></body></html>
