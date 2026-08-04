@@ -25,34 +25,7 @@ function my(){let progress=Math.min(100,db.user.points/5000*100);return `<sectio
 function adminPanel(){let pending=db.verifications.filter(v=>v.status==='pending');return `<section class="card admin-card"><h2>愿由ъ옄 寃??/h2><div class="grid"><div class="metric"><small>?몄쬆 ?湲?/small><b>${pending.length}</b></div><div class="metric"><small>誘몄쿂由??좉퀬</small><b>${db.reports.filter(r=>r.status==='reported').length}</b></div><div class="metric"><small>泥?냼 ?꾨즺</small><b>${db.reports.filter(r=>r.status==='cleaned').length}</b></div><div class="metric"><small>援먰솚 ?湲?/small><b>${db.exchanges.filter(e=>e.status==='pending').length}</b></div></div><button onclick="demoPoints()">?곕え ?ъ씤??5,000P 吏湲?/button><h3 style="margin-top:16px">泥?냼 ?몄쬆 ?湲?/h3>${pending.map(v=>verifyCard(v)).join('')||'<div class="empty">寃?좏븷 ?몄쬆???놁뒿?덈떎.</div>'}<h3>援먰솚 ?붿껌</h3>${db.exchanges.map(e=>`<div class="item"><div style="flex:1"><b>${esc(e.product)}</b><br>${e.status} 쨌 ${date(e.createdAt)}</div>${e.status==='pending'?`<button onclick="approveGift('${e.id}')">?뱀씤</button><button class="danger" onclick="rejectGift('${e.id}')">諛섎젮/?섎텋</button>`:''}</div>`).join('')||'<div class="empty">?붿껌???놁뒿?덈떎.</div>'}</section>`}
 function verifyCard(v){let r=db.reports.find(x=>x.id===v.reportId);return `<div class="item"><img class="thumb" src="${v.beforeImage}" alt="?좉퀬 ???ъ쭊"><img class="thumb" src="${v.afterImage}" alt="泥?냼 ???ъ쭊"><div style="flex:1"><b>${esc(r?.district||'')}</b> 쨌 ${fmt(v.distance)}m<br><small>${esc(v.description)}</small><br><button onclick="approveVerify('${v.id}')">?뱀씤</button> <button class="danger" onclick="rejectVerify('${v.id}')">諛섎젮</button></div></div>`}
 function render(){document.getElementById('app').innerHTML=({home,report,map:mapPage,activity,my}[page])();document.querySelectorAll('[data-page]').forEach(b=>b.classList.toggle('active',b.dataset.page===page));if(page==='report')bindReport();if(page==='map')setTimeout(()=>drawMap('all'),0)}function go(p){page=p;render();window.scrollTo(0,0)}
-function bindReport(){document.getElementById('photo').onchange=e=>{let f=e.target.files[0];if(f)readFile(f,u=>{let im=document.getElementById('preview');im.src=u;im.hidden=false})};document.getElementById('reportForm').onsubmit=e=>{e.preventDefault();let b=document.g…8630 tokens truncated… null}}
-  function write(d){localStorage.setItem(STORE,JSON.stringify(d))}
-  function esc2(s){return String(s||'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
-  function adminConsole(){
-    document.querySelector('.top h1').textContent='\ubc14\ub2e4\uc90dGo \uad00\ub9ac\uc790';document.querySelector('.top p').textContent='\uccad\uc18c \uc778\uc99d \uac80\ud1a0 \uc804\uc6a9 \ud654\uba74';document.querySelector('.bottom').style.display='none';
-    var d=read()||{reports:[],verifications:[],user:{points:0,totalEarned:0}};var p=d.verifications.filter(function(v){return v.status==='pending'});
-    document.getElementById('app').innerHTML='<section class="card admin-card"><div class="spacer"><h2>\uccad\uc18c \uc778\uc99d \uac80\ud1a0</h2><span class="tag reviewing">'+p.length+'\uac74 \ub300\uae30</span></div><p class="notice">\uc2e0\uace0 \uc804\ud6c4 \uc0ac\uc9c4, \uc704\uce58 \uac70\ub9ac, \uc124\uba85\uc744 \ud655\uc778\ud55c \ud6c4 \ucc98\ub9ac\ud558\uc138\uc694.</p>'+(p.length?p.map(function(v){var r=d.reports.find(function(x){return x.id===v.reportId})||{};return '<div class="card" style="background:#f9fcfc"><div class="two"><div><small>\uc2e0\uace0 \uc804</small><img class="preview" style="width:100%" src="'+(v.beforeImage||r.image||'')+'" alt="\uc2e0\uace0 \uc804 \uc0ac\uc9c4"></div><div><small>\uccad\uc18c \ud6c4</small><img class="preview" style="width:100%" src="'+(v.afterImage||'')+'" alt="\uccad\uc18c \ud6c4 \uc0ac\uc9c4"></div></div><p><b>'+esc2(r.district)+' 쨌 '+esc2(r.trashType)+'</b><br><small>\uc704\uce58 \uac70\ub9ac: '+Number(v.distance||0).toLocaleString('ko-KR')+'m</small><br>'+esc2(v.description)+'</p><button onclick="window.cleanAdminApprove(\''+v.id+'\')">\uc2b9\uc778 (100P \uc9c0\uae09)</button> <button class="danger" onclick="window.cleanAdminReject(\''+v.id+'\')">\ubc18\ub824</button></div>'}).join(''):'<div class="empty">\ud604\uc7ac \uac80\ud1a0 \ub300\uae30 \uc911\uc778 \uc778\uc99d\uc774 \uc5c6\uc2b5\ub2c8\ub2e4.</div>')+'<p class="notice warning">\uc774 \uad00\ub9ac\uc790 \ud654\uba74\uc740 \ud504\ub85c\ud1a0\ud0c0\uc785\uc785\ub2c8\ub2e4. \uc2e4\uc81c \uc11c\ube44\uc2a4\uc5d0\uc11c\ub294 \uc11c\ubc84 \uae30\ubc18 \uacc4\uc815\uacfc \uad8c\ud55c \uad00\ub9ac\uac00 \ud544\uc694\ud569\ub2c8\ub2e4.</p></section>';
-  }
-  if(location.hash===ADMIN_HASH){
-    if(sessionStorage.getItem(ADMIN_SESSION)==='yes'){adminConsole();return}
-    document.querySelector('.bottom').style.display='none';document.getElementById('app').innerHTML='<section class="card"><h2>\uad00\ub9ac\uc790 \uc811\uc18d</h2><p class="muted">\uc778\uc99d \uac80\ud1a0\ub97c \uc704\ud55c \ubcc4\ub3c4 \ud654\uba74\uc785\ub2c8\ub2e4.</p><label>\uad00\ub9ac\uc790 \uc554\ud638</label><input id="adminPass" type="password" autocomplete="current-password"><button id="adminEnter" style="width:100%;margin-top:12px">\uc811\uc18d</button></section>';document.getElementById('adminEnter').onclick=function(){if(document.getElementById('adminPass').value==='bada2026!'){sessionStorage.setItem(ADMIN_SESSION,'yes');adminConsole()}else alert('\uc554\ud638\uac00 \uc62c\ubc14\ub974\uc9c0 \uc54a\uc2b5\ub2c8\ub2e4.')};
-  }else{
-    var normal=read();if(normal&&normal.admin){normal.admin=false;write(normal);location.reload();return}
-    var remove=function(){document.querySelectorAll('button[onclick="window.cleanAdmin()"]').forEach(function(b){b.remove()})};remove();new MutationObserver(remove).observe(document.getElementById('app'),{childList:true,subtree:true});
-  }
-})();
-</script><script>
-/* Interactive report-location picker: click or drag the pin to set exact coordinates. */
-(function(){
-  var priorGo=window.cleanGo, priorGPS=window.cleanGPS;
-  function setPoint(lat,lng,move){
-    var a=document.getElementById('safeLat'),b=document.getElementById('safeLng'),out=document.getElementById('safeGps');if(!a||!b)return;
-    a.value=Number(lat).toFixed(6);b.value=Number(lng).toFixed(6);if(out)out.textContent=' '+a.value+', '+b.value+' (\uc9c0\ub3c4\uc5d0\uc11c \uc120\ud0dd\ud55c \uc704\uce58)';
-    if(window.reportPin){window.reportPin.setLatLng([lat,lng]);if(move)window.reportPickerMap.setView([lat,lng],16)}
-  }
-  function picker(){
-    var form=document.getElementById('safeForm');if(!form||document.getElementById('reportPickerWrap'))return;
-    var wrap=document.createElement('section');wrap.id='reportPickerWrap';wrap.className='card';wrap.style.margin='16px 0 0';wrap.innerHTML='<h3>\uc815\ud655\ud55c \uc2e0\uace0 \uc704\uce58</h3><p class="muted">\uc9c0\ub3c4\ub97c \ud655\ub300\ud558\uac70\ub098 \ucd95\uc18c\ud558\uace0, \ud604\uc7a5 \uc704\uce58\ub97c \ud074\ub9ad\ud558\uc138\uc694. \ud30c\ub780 \ud540\uc744 \ub04c\uc5b4 \uc62e\uae30\uc154\ub3c4 \ub429\ub2c8\ub2e4.</p><div id="reportPickerMap" class="map"></div><small id="pickerHint" class="muted">\ud604\uc7ac \uc704\uce58\ub97c \uac00\uc838\uc624\uac70\ub098 \uc9c0\ub3c4\ub97c \ud074\ub9ad\ud558\uc5ec \uc704\uce58\ub97c \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.</small>';
+function bindReport(){document.getElementById('photo').onchange=e=>{let f=e.target.files[0];if(f)readFile(f,u=>{let im=document.getElementById('preview');im.src=u;im.hidden=false})};document.getElementById('reportForm').onsubmit=e=>{e.preventDefault();let b=document.g…9867 tokens truncated…\ub9ad\ud558\uc5ec \uc704\uce58\ub97c \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.</small>';
     form.insertBefore(wrap,form.querySelector('label:nth-of-type(2)'));
     if(!window.L){document.getElementById('reportPickerMap').innerHTML='<div class="fallback">\uc9c0\ub3c4\ub97c \ubd88\ub7ec\uc624\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4. \uc704\ub3c4\uc640 \uacbd\ub3c4\ub97c \uc9c1\uc811 \uc785\ub825\ud574 \uc8fc\uc138\uc694.</div>';return}
     var la=Number(document.getElementById('safeLat').value)||35.1530,lo=Number(document.getElementById('safeLng').value)||129.1190;
@@ -94,6 +67,41 @@ body{background:linear-gradient(180deg,#e9f8fb 0,#f4f8fa 28%,#eef8f9 100%)}
 .top{position:relative;overflow:hidden;background:linear-gradient(125deg,#063f5d 0%,#087e8b 48%,#2ec4b6 100%);padding-bottom:46px;box-shadow:0 8px 22px #063f5d38}.top:before,.top:after{content:"";position:absolute;left:-8%;right:-8%;height:42px;border-radius:50%;bottom:-22px;background:#f4f8fa;opacity:.95}.top:after{bottom:-30px;left:-2%;right:-2%;height:38px;background:#d9f2f3;opacity:.55}.top .wrap{position:relative;z-index:1}.top h1{letter-spacing:-.8px;text-shadow:0 2px 5px #04384a55}.top h1 small{font-weight:500;font-size:13px;letter-spacing:.3px}.top p{max-width:330px;line-height:1.5}.card{background:linear-gradient(145deg,#fff,#fbffff);border-color:#d5e9ec;box-shadow:0 8px 22px #0b62750e}.card h2{color:#075f70}.metric{background:linear-gradient(140deg,#e8f9fa,#d9f1f3);border:1px solid #d2eaed}.metric b{color:#076c7b}.bar{background:#dceff0}.bar i{background:linear-gradient(90deg,#087e8b,#2ec4b6)}button{background:linear-gradient(135deg,#087e8b,#0c9ba4);box-shadow:0 3px 8px #087e8b30;transition:transform .16s,box-shadow .16s}button:hover{transform:translateY(-1px);box-shadow:0 5px 12px #087e8b3d}button.outline{background:#f8ffff;border-color:#66bfc4}.notice{border-left-color:#2ec4b6;background:linear-gradient(90deg,#e7f8f9,#f8ffff)}.map{border:2px solid #cde9eb;box-shadow:inset 0 0 0 1px #fff}.bottom{background:#ffffffed;backdrop-filter:blur(12px);box-shadow:0 -6px 18px #0a5d6b12}.bottom button.active{background:linear-gradient(180deg,#e9fbfb,#fff);color:#057e8c;box-shadow:inset 0 3px #2ec4b6}.thumb,.preview{box-shadow:0 3px 9px #075c681f}.tag.reported{background:#fff0e9;color:#bd4c25}.tag.reviewing{background:#fff8dd;color:#84620d}.tag.cleaned{background:#e3f7ec;color:#167343}.quick button{min-height:56px;background:linear-gradient(145deg,#087e8b,#2cbdb5)}
 </style>
 <script>
+/* Reliable My Page enhancer.  This is deliberately independent from older extensions. */
+(function () {
+  var STORE = 'cleanSeaBusan_safe_v2';
+  function read() { try { return JSON.parse(localStorage.getItem(STORE)); } catch (_) { return null; } }
+  function write(d) { localStorage.setItem(STORE, JSON.stringify(d)); }
+  function toast(text) { var t = document.getElementById('toast'); if (!t) return; t.textContent = text; t.style.display = 'block'; setTimeout(function(){ t.style.display = 'none'; }, 2400); }
+  function openShop() {
+    var d = read(); if (!d) return; d.user = d.user || { points: 0 };
+    var old = document.getElementById('reliableShop'); if (old) old.remove();
+    var modal = document.createElement('div'); modal.id = 'reliableShop'; modal.className = 'report-modal';
+    var points = Number(d.user.points || 0);
+    modal.innerHTML = '<div class="report-dialog"><div class="spacer"><h2>?ъ씤???곸젏</h2><button class="outline" id="closeReliableShop">?リ린</button></div><p class="notice">蹂댁쑀 ?ъ씤?? <b>'+points.toLocaleString('ko-KR')+'P</b></p><div class="item"><div style="flex:1"><b>?몄쓽??5,000?먭텒</b><br><small>5,000P 쨌 愿由ъ옄 ?뱀씤 ??援먰솚</small></div><button data-product="?몄쓽??5,000?먭텒" '+(points < 5000 ? 'disabled' : '')+'>援먰솚</button></div><div class="item"><div style="flex:1"><b>移댄럹 ?뚮즺沅?/b><br><small>5,000P 쨌 愿由ъ옄 ?뱀씤 ??援먰솚</small></div><button data-product="移댄럹 ?뚮즺沅? '+(points < 5000 ? 'disabled' : '')+'>援먰솚</button></div></div>';
+    document.body.appendChild(modal); document.getElementById('closeReliableShop').onclick = function(){ modal.remove(); };
+    modal.onclick = function(e){ if (e.target === modal) modal.remove(); };
+    modal.querySelectorAll('[data-product]').forEach(function(btn){ btn.onclick = function(){ var now = read(); if (!now || !now.user || Number(now.user.points||0) < 5000) return; var product = btn.dataset.product; if (!confirm(product+'??援먰솚 ?좎껌?좉퉴?? 5,000P媛 李④컧?⑸땲??')) return; now.user.points -= 5000; now.user.totalSpent = Number(now.user.totalSpent||0)+5000; now.exchanges = Array.isArray(now.exchanges) ? now.exchanges : []; now.exchanges.unshift({id:'exchange_'+Date.now(),product:product,points:5000,status:'pending',createdAt:new Date().toISOString()}); write(now); modal.remove(); toast('援먰솚 ?붿껌???묒닔?섏뿀?듬땲??'); renderMyPage(); }; });
+  }
+  function renderMyPage() {
+    var active = document.querySelector('[data-page="my"].active'); if (!active) return;
+    var app = document.getElementById('app'), d = read(); if (!app || !d) return;
+    d.user = d.user || { points:0, totalEarned:0, totalSpent:0 }; d.verifications = Array.isArray(d.verifications) ? d.verifications : [];
+    var old = document.getElementById('reliableMyPage'); if (old) old.remove();
+    var completed = d.verifications.filter(function(v){ return v.status === 'approved'; }).length;
+    var section = document.createElement('section'); section.id = 'reliableMyPage'; section.innerHTML =
+      '<section class="card"><h2>?ъ씤???곸젏</h2><p class="muted">?곷┰???ъ씤?몃줈 湲고봽?곗퐯??援먰솚?????덉뼱??</p><button class="outline" id="reliableOpenShop">?ъ씤???곸젏 ?닿린</button></section>'+
+      '<section class="card"><h2>?섏쓽 李몄뿬 ?뺣낫</h2><div class="metric"><small>泥?냼 ?꾨즺 李몄뿬 ?잛닔</small><b>'+completed+'??/b></div><label for="reliableResidence">嫄곗＜吏 <span class="muted" style="font-weight:400">(?좏깮)</span></label><input id="reliableResidence" maxlength="80" placeholder="?? 遺?곌킅??떆 ?댁슫?援? value="'+String(d.user.residence||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;')+'"><small class="muted">?낅젰?섏? ?딆븘???섎ŉ, ??釉뚮씪?곗??먮쭔 ??λ맗?덈떎.</small></section>'+
+      '<section class="card"><h2>?곕え ?곗씠??/h2><p class="muted">?좉퀬, ?몄쬆, ?ъ씤?? 援먰솚 ?붿껌??珥덇린 ?곹깭濡??섎룎由쎈땲??</p><button class="danger" id="reliableReset">?곕え ?곗씠??珥덇린??/button></section>';
+    app.appendChild(section);
+    document.getElementById('reliableOpenShop').onclick = openShop;
+    document.getElementById('reliableResidence').onchange = function(){ var now=read(); if(now){now.user=now.user||{}; now.user.residence=this.value.trim(); write(now); toast('嫄곗＜吏媛 ??λ릺?덉뒿?덈떎.');} };
+    document.getElementById('reliableReset').onclick = function(){ if (typeof window.cleanReset === 'function') window.cleanReset(); else { localStorage.removeItem(STORE); location.reload(); } };
+  }
+  document.addEventListener('click', function(){ setTimeout(renderMyPage, 60); });
+  new MutationObserver(function(){ setTimeout(renderMyPage, 0); }).observe(document.getElementById('app'), { childList:true, subtree:true });
+  setTimeout(renderMyPage, 0);
+}());
 /* Startup guard: old demo storage must never be able to blank the application. */
 (function () {
   var STORE = 'cleanSeaBusan_safe_v2';
