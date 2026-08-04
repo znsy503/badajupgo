@@ -255,6 +255,11 @@ body{background:linear-gradient(180deg,#e9f8fb 0,#f4f8fa 28%,#eef8f9 100%)}
   } catch (_) { emergencyHome(); }
 }());
 </script><script>
+/* Always-visible Point Shop card on the base My Page screen. */
+(function(){
+  function addCard(){var app=document.getElementById('app'),tab=document.querySelector('[data-page="my"].active');if(!app||!tab||document.getElementById('basePointShopCard'))return;var card=document.createElement('section');card.id='basePointShopCard';card.className='card';card.innerHTML='<h2>\ud3ec\uc778\ud2b8 \uc0c1\uc810</h2><p class="muted">\ud3ec\uc778\ud2b8\ub85c \uae30\ud504\ud2f0\ucf58\uc744 \uad50\ud658\ud560 \uc218 \uc788\uc5b4\uc694.</p><button class="outline" type="button">\ud3ec\uc778\ud2b8 \uc0c1\uc810 \uc5f4\uae30</button>';card.querySelector('button').onclick=function(){if(typeof window.openPointShop==='function')window.openPointShop();else alert('\uc0c1\uc810\uc744 \uc900\ube44\ud558\uace0 \uc788\uc5b4\uc694.')};app.insertBefore(card,app.children[1]||null)}document.addEventListener('click',function(){setTimeout(addCard,50)});setInterval(addCard,400);
+}());
+</script><script>
 /* First-run My Page fallback: works even before a user has any saved activity. */
 (function(){
   var K='cleanSeaBusan_safe_v2';
