@@ -597,7 +597,10 @@ input:focus,select:focus,textarea:focus{outline:3px solid #35c5d22e;border-color
 </script>
 <style>
 /* Let the banner finish at the wave itself—no extra rectangular strip below it. */
-.top{padding-bottom:42px}
-.top:after{display:none}
-.top:before{bottom:-8px;height:78px;background-size:360px 78px}
+.top{padding-bottom:48px}
+.top:before{bottom:-6px;height:88px;background-size:360px 88px}
+.top:after{
+  display:block;z-index:1;left:0;right:0;bottom:0;width:auto;height:3px;
+  transform:none;border-radius:0;background:var(--bg);box-shadow:none;
+}
 </style>
