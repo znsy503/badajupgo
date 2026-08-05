@@ -342,7 +342,7 @@ document.addEventListener('click',()=>setTimeout(authCard,80));
 /* Profile fields act as a Google-login entry point until the user is signed in. */
 (function(){
   function askToSignIn(e){
-    if(window.firebaseSignedIn)return;
+    if(window.firebaseSignedIn||e.target.closest('#profileLoginAfterLogout'))return;
     e.preventDefault();e.stopImmediatePropagation();
     if(typeof window.firebaseGoogleLogin==='function'){
       window.firebaseGoogleLogin().catch(function(err){alert('Google login could not be completed: '+err.message)});
@@ -388,5 +388,27 @@ document.addEventListener('click',()=>setTimeout(authCard,80));
   }
   document.addEventListener('click',function(){setTimeout(drawLogout,120)});
   setInterval(drawLogout,350);
+}());
+</script>
+<script>
+/* Restore a visible Google login action after sign-out. */
+(function(){
+  function drawProfileLogin(){
+    var tab=document.querySelector('[data-page="my"].active'),profile=document.getElementById('userProfileCard');
+    if(!tab||!profile)return;
+    var button=document.getElementById('profileLoginAfterLogout');
+    if(window.firebaseSignedIn){button?.remove();return;}
+    if(button)return;
+    var box=document.createElement('div');
+    box.id='profileLoginAfterLogout';box.style.marginTop='12px';
+    box.innerHTML='<button class="outline" type="button" style="width:100%">Google&#xB85C; &#xB85C;&#xADF8;&#xC778;</button>';
+    profile.appendChild(box);
+    box.querySelector('button').onclick=function(e){
+      e.preventDefault();e.stopPropagation();
+      if(typeof window.firebaseGoogleLogin==='function')window.firebaseGoogleLogin().catch(function(err){alert('Google login could not be completed: '+err.message)});
+    };
+  }
+  document.addEventListener('click',function(){setTimeout(drawProfileLogin,150)});
+  setInterval(drawProfileLogin,350);
 }());
 </script>
