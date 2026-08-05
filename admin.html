@@ -49,15 +49,23 @@
         const snapshot=await getDocs(collection(db,'reviewRequests'));
         const allRequests=snapshot.docs.map(item=>({id:item.id,...item.data()}));
         for(const request of allRequests.filter(item=>item.status==='approved'&&!item.rewardPaid)) await grantReward(request);
-        const requests=await Promise.all(allRequests.filter(item=>item.status==='pending').map(async request=>{
+        const requests=(await Promise.all(allRequests.filter(item=>item.status==='pending').map(async request=>{
           const reportSnap=await getDoc(doc(db,'reports',request.reportId));
-          return {...request,cleanerEmail:request.reporterEmail||'알 수 없음',reporterEmail:reportSnap.exists()?(reportSnap.data().reporterEmail||'알 수 없음'):'알 수 없음'};
-        }));
+          const reporterEmail=reportSnap.exists()?(reportSnap.data().reporterEmail||''):'',cleanerEmail=request.reporterEmail||'';
+          if(reporterEmail&&cleanerEmail&&reporterEmail.toLowerCase()===cleanerEmail.toLowerCase()){
+            await rejectSameAccount(request);
+            request.status='rejected';
+            request.rejectionReason='신고자와 청소 인증자의 Google 계정이 동일하여 자동 반려되었습니다.';
+            request.reviewedAt=new Date().toISOString();
+            return null;
+          }
+          return {...request,cleanerEmail:cleanerEmail||'알 수 없음',reporterEmail:reporterEmail||'알 수 없음'};
+        }))).filter(Boolean);
         app.innerHTML='<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>청소 인증 검토</h2><span class="tag">'+requests.length+'건 대기</span></div><p class="notice">모바일과 PC에서 제출된 인증 요청을 함께 표시합니다.</p></section>'+(requests.length?requests.map(request=>'<section class="card"><div class="grid"><div><small>신고 전 사진</small><img class="photo" src="'+esc(request.beforeImage)+'" alt="신고 전 사진"></div><div><small>청소 후 사진</small><img class="photo" src="'+esc(request.afterImage)+'" alt="청소 후 사진"></div></div><p><b>신고 번호: '+esc(request.reportId)+'</b><br><span class="muted">신고자 Google 계정: '+esc(request.reporterEmail)+'<br>청소 인증자 Google 계정: '+esc(request.cleanerEmail)+'<br>인증 거리: '+distance(request.distance)+'m · 제출: '+esc(new Date(request.createdAt).toLocaleString('ko-KR'))+'</span><br>'+esc(request.description)+'</p><button data-action="approved" data-id="'+esc(request.id)+'">승인</button> <button class="danger" data-action="rejected" data-id="'+esc(request.id)+'">반려</button></section>').join(''):'<section class="card empty">검토 대기 중인 청소 인증이 없습니다.</section>')+'<section class="card"><button class="outline" id="logoutButton">로그아웃</button> <a href="index.html" style="margin-left:10px;color:#087e8b">사용자 화면으로</a></section>';
         const history=allRequests.filter(item=>item.status==='approved'||item.status==='rejected').sort((a,b)=>new Date(b.reviewedAt||b.createdAt)-new Date(a.reviewedAt||a.createdAt));
         const reportSnapshot=await getDocs(collection(db,'reports'));
         const waitingReports=reportSnapshot.docs.map(item=>({id:item.id,...item.data()})).filter(item=>item.status==='reported').sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
-        const historyPanel='<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>승인 · 반려 처리 이력</h2><span class="tag">'+history.length+'건</span></div>'+(history.length?history.map(item=>'<p style="padding:10px 0;border-top:1px solid #dce6ea"><b>'+(item.status==='approved'?'승인 · 100P 지급':'반려')+'</b><br><span class="muted">인증 번호: '+esc(item.id)+' · 처리: '+esc(new Date(item.reviewedAt||item.createdAt).toLocaleString('ko-KR'))+'</span></p>').join(''):'<p class="muted">처리 이력이 없습니다.</p>')+'</section>';
+        const historyPanel='<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>승인 · 반려 처리 이력</h2><span class="tag">'+history.length+'건</span></div>'+(history.length?history.map(item=>'<p style="padding:10px 0;border-top:1px solid #dce6ea"><b>'+(item.status==='approved'?'승인 · 100P 지급':'반려')+'</b><br><span class="muted">인증 번호: '+esc(item.id)+' · 처리: '+esc(new Date(item.reviewedAt||item.createdAt).toLocaleString('ko-KR'))+(item.rejectionReason?'<br>반려 사유: '+esc(item.rejectionReason):'')+'</span></p>').join(''):'<p class="muted">처리 이력이 없습니다.</p>')+'</section>';
         const waitingPanel='<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>청소 대기 신고</h2><span class="tag">'+waitingReports.length+'건</span></div><p class="notice">신고는 접수되었지만 아직 청소 인증이 제출되지 않은 목록입니다.</p>'+(waitingReports.length?waitingReports.map(item=>'<p style="padding:10px 0;border-top:1px solid #dce6ea"><b>'+esc(item.district)+' · '+esc(item.trashType)+'</b><br><span class="muted">신고자: '+esc(item.reporterEmail||'알 수 없음')+' · '+esc(new Date(item.createdAt).toLocaleString('ko-KR'))+'</span><br>'+esc(item.description)+'</p>').join(''):'<p class="muted">청소 대기 신고가 없습니다.</p>')+'</section>';
         app.insertAdjacentHTML('beforeend',historyPanel+waitingPanel);
         document.querySelectorAll('[data-action]').forEach(button=>button.onclick=()=>review(button.dataset.id,button.dataset.action));
@@ -65,6 +73,15 @@
       }catch(error){
         app.innerHTML='<section class="card empty">검토 요청을 불러오지 못했습니다.<br><small>'+esc(error.message)+'</small></section>';
       }
+    }
+
+    async function rejectSameAccount(request){
+      const reason='신고자와 청소 인증자의 Google 계정이 동일하여 자동 반려되었습니다.';
+      const userRef=doc(db,'users',request.reporterId),userSnap=await getDoc(userRef);
+      const appData=userSnap.exists()?(userSnap.data().appData||{}):{};
+      const verifications=(appData.verifications||[]).map(item=>item.id===request.id?{...item,status:'rejected',rejectionReason:reason,reviewedAt:new Date().toISOString()}:item);
+      await setDoc(userRef,{appData:{...appData,verifications},updatedAt:serverTimestamp()},{merge:true});
+      await updateDoc(doc(db,'reviewRequests',request.id),{status:'rejected',rejectionReason:reason,reviewedAt:new Date().toISOString()});
     }
 
     async function grantReward(request){
