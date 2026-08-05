@@ -282,4 +282,7 @@ body{background:linear-gradient(180deg,#e9f8fb 0,#f4f8fa 28%,#eef8f9 100%)}
   function clean(){var app=document.getElementById('app'),tab=document.querySelector('[data-page="my"].active');if(!app||!tab)return;var cards=Array.prototype.slice.call(app.querySelectorAll('.card'));keepFirst(cards.filter(function(c){var h=c.querySelector('h2');return h&&h.textContent.trim()===shop}));keepFirst(cards.filter(function(c){var h=c.querySelector('h2');return h&&h.textContent.trim()===participation}));keepFirst(Array.prototype.slice.call(app.querySelectorAll('button')).filter(function(b){return b.textContent.trim()===reset}));}
   document.addEventListener('click',function(){setTimeout(clean,100)});setInterval(clean,300);setTimeout(clean,0);
 }());
+</script><script>
+/* Keep residence directly below the nickname in the profile card. */
+(function(){function move(){var profile=document.getElementById('userProfileCard'),nick=document.getElementById('profileNickname'),res=document.getElementById('firstRunResidence');if(!profile||!nick||!res||res.dataset.moved)return;var label=res.previousElementSibling;if(label&&label.tagName==='LABEL'){label.style.marginTop='10px';nick.parentNode.appendChild(label)}nick.parentNode.appendChild(res);res.dataset.moved='yes'}document.addEventListener('click',function(){setTimeout(move,120)});setInterval(move,400)}());
 </script></body></html>
