@@ -312,9 +312,29 @@ const fbAuth=getAuth(fbApp),fbDb=getFirestore(fbApp),fbStore='cleanSeaBusan_safe
 function authCard(){var app=document.getElementById('app'),myTab=document.querySelector('[data-page="my"].active');if(!app||!myTab||document.getElementById('firebaseAuthCard'))return;var card=document.createElement('section');card.id='firebaseAuthCard';card.className='card';card.innerHTML=signedUser?'<div class="spacer"><div><h2>'+((signedUser.displayName||'사용자'))+' 환영합니다.</h2><p class="muted">신고와 포인트를 계정에 저장하고 있습니다.</p></div><button class="outline" id="firebaseSignOut">로그아웃</button></div>':'<h2>내 기록 저장</h2><p class="muted">Google 계정으로 로그인하면 신고, 포인트, 참여 정보를 계정별로 저장할 수 있어요.</p><button id="firebaseSignIn">Google로 로그인</button>';app.insertBefore(card,app.firstChild);var si=document.getElementById('firebaseSignIn'),so=document.getElementById('firebaseSignOut');if(si)si.onclick=async()=>{try{await signInWithPopup(fbAuth,new GoogleAuthProvider())}catch(e){alert('Google 로그인에 실패했습니다: '+e.message)}};if(so)so.onclick=()=>signOut(fbAuth)}
 async function restoreOrCreate(u){var ref=doc(fbDb,'users',u.uid),restoredKey='badajupgo_restored_'+u.uid,snap=await getDoc(ref);if(snap.exists()&&snap.data().appData){if(sessionStorage.getItem(restoredKey)!=='yes'){sessionStorage.setItem(restoredKey,'yes');localStorage.setItem(fbStore,JSON.stringify(snap.data().appData));location.reload();return}}else{var raw=localStorage.getItem(fbStore);await setDoc(ref,{uid:u.uid,email:u.email||'',displayName:u.displayName||'',appData:raw?JSON.parse(raw):{},updatedAt:serverTimestamp()},{merge:true})}}
 const rawSet=localStorage.setItem.bind(localStorage);localStorage.setItem=function(k,v){rawSet(k,v);if(k===fbStore&&signedUser){try{setDoc(doc(fbDb,'users',signedUser.uid),{uid:signedUser.uid,email:signedUser.email||'',displayName:signedUser.displayName||'',appData:JSON.parse(v),updatedAt:serverTimestamp()},{merge:true})}catch(e){}}};
-onAuthStateChanged(fbAuth,async u=>{signedUser=u||null;if(u){try{await restoreOrCreate(u)}catch(e){console.warn(e);alert('Firebase 데이터 동기화 오류: '+e.message)}}document.getElementById('firebaseAuthCard')?.remove();authCard()});
+onAuthStateChanged(fbAuth,async u=>{signedUser=u||null;window.firebaseSignedIn=!!u;if(u){try{await restoreOrCreate(u)}catch(e){console.warn(e);alert('Firebase 데이터 동기화 오류: '+e.message)}}document.getElementById('firebaseAuthCard')?.remove();authCard()});
 document.addEventListener('click',()=>setTimeout(authCard,80));
 </script><script>
 /* Clear login / sign-up entry point for the My Page screen. */
 (function(){function add(){var app=document.getElementById('app'),tab=document.querySelector('[data-page="my"].active');if(!app||!tab||document.getElementById('loginEntryCard'))return;var card=document.createElement('section');card.id='loginEntryCard';card.className='card';card.innerHTML='<h2>\ub0b4 \uae30\ub85d \uc800\uc7a5</h2><p class="muted">Google \uacc4\uc815\uc73c\ub85c \ub85c\uadf8\uc778\ud558\uba74 \uc2e0\uace0, \ud3ec\uc778\ud2b8, \ucc38\uc5ec \uc815\ubcf4\ub97c \uacc4\uc815\uc5d0 \uc800\uc7a5\ud569\ub2c8\ub2e4.</p><button id="googleLoginEntry">Google\ub85c \ub85c\uadf8\uc778 / \ud68c\uc6d0\uac00\uc785</button>';app.insertBefore(card,app.firstChild);document.getElementById('googleLoginEntry').onclick=function(){if(typeof window.firebaseGoogleLogin==='function')window.firebaseGoogleLogin().catch(function(e){alert('Google \ub85c\uadf8\uc778\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4: '+e.message)});else alert('Firebase \uc5f0\uacb0\uc744 \uc900\ube44 \uc911\uc785\ub2c8\ub2e4. \uc7a0\uc2dc \ud6c4 \ub2e4\uc2dc \ub20c\ub7ec \uc8fc\uc138\uc694.')};}document.addEventListener('click',function(){setTimeout(add,100)});setInterval(add,400)}());
 </script><script>(function(){function removeDuplicateLogin(){document.getElementById('loginEntryCard')?.remove();document.getElementById('firebaseAuthCard')?.remove();var profile=document.getElementById('userProfileCard');if(!profile||document.getElementById('profileGoogleLogin'))return;var box=document.createElement('div');box.id='profileGoogleLogin';box.style.marginTop='10px';box.innerHTML='<button class="outline" type="button" style="width:auto;min-height:34px;padding:5px 11px;font-size:12px">Google\ub85c \ub85c\uadf8\uc778</button>';profile.appendChild(box);box.querySelector('button').onclick=function(){if(typeof window.firebaseGoogleLogin==='function')window.firebaseGoogleLogin().catch(function(e){alert('Google \ub85c\uadf8\uc778\uc5d0 \uc2e4\ud328\ud588\uc2b5\ub2c8\ub2e4: '+e.message)});else alert('Firebase \uc5f0\uacb0\uc744 \uc900\ube44 \uc911\uc785\ub2c8\ub2e4.')};}document.addEventListener('click',function(){setTimeout(removeDuplicateLogin,80)});setInterval(removeDuplicateLogin,300)}());</script><style>#firebaseAuthCard,#loginEntryCard{display:none!important}</style></body></html>
+<script>
+/* Show profile settings only after Google sign-in. */
+(function(){
+  function updateProfileAccess(){
+    var app=document.getElementById('app'),tab=document.querySelector('[data-page="my"].active'),profile=document.getElementById('userProfileCard');
+    if(!app||!tab)return;
+    document.getElementById('profileGoogleLogin')?.remove();
+    if(window.firebaseSignedIn){if(profile)profile.style.display='';document.getElementById('preLoginOnly')?.remove();return;}
+    if(profile)profile.style.display='none';
+    if(document.getElementById('preLoginOnly'))return;
+    var card=document.createElement('section');
+    card.id='preLoginOnly';card.className='card';
+    card.innerHTML='<button type="button" style="width:100%">Google&#xB85C; &#xB85C;&#xADF8;&#xC778;</button>';
+    app.insertBefore(card,app.firstChild);
+    card.querySelector('button').onclick=function(){if(typeof window.firebaseGoogleLogin==='function')window.firebaseGoogleLogin().catch(function(e){alert('Google \\ub85c\\uadf8\\uc778\\uc5d0 \\uc2e4\\ud328\\ud588\\uc2b5\\ub2c8\\ub2e4: '+e.message)});};
+  }
+  document.addEventListener('click',function(){setTimeout(updateProfileAccess,100)});
+  setInterval(updateProfileAccess,350);
+}());
+</script>
