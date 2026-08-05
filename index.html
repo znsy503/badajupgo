@@ -311,12 +311,12 @@ const fbApp=initializeApp({apiKey:'AIzaSyCD8ZA1uYLPp_DOPsuOj71L9QdawK6cJP8',auth
 const fbAuth=getAuth(fbApp),fbDb=getFirestore(fbApp),fbStore='cleanSeaBusan_safe_v2';let signedUser=null;window.firebaseGoogleLogin=()=>signInWithPopup(fbAuth,new GoogleAuthProvider());window.firebaseGoogleLogout=()=>signOut(fbAuth);
 window.firebaseQueueVerification=async function(v){if(!signedUser)throw new Error('login-required');await setDoc(doc(fbDb,'reviewRequests',v.id),Object.assign({},v,{reporterId:signedUser.uid,reporterEmail:signedUser.email||'',queuedAt:serverTimestamp()}),{merge:true})};
 window.firebaseSyncReport=async function(r){if(!signedUser)throw new Error('login-required');await setDoc(doc(fbDb,'reports',r.id),Object.assign({},r,{reporterId:signedUser.uid,reporterEmail:signedUser.email||'',updatedAt:serverTimestamp()}),{merge:true})};
-window.firebaseSubmitAppeal=async function(message){if(!signedUser)throw new Error('login-required');var id='appeal_'+Date.now()+'_'+Math.random().toString(36).slice(2,7);await setDoc(doc(fbDb,'appeals',id),{id:id,reporterId:signedUser.uid,reporterEmail:signedUser.email||'',reporterName:signedUser.displayName||'사용자',message:String(message||'').trim(),status:'pending',createdAt:new Date().toISOString(),createdAtServer:serverTimestamp()});return id};
+window.firebaseSubmitAppeal=async function(message,context){if(!signedUser)throw new Error('login-required');var id='appeal_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),extra=context&&typeof context==='object'?context:{};await setDoc(doc(fbDb,'appeals',id),Object.assign({id:id,reporterId:signedUser.uid,reporterEmail:signedUser.email||'',reporterName:signedUser.displayName||'사용자',message:String(message||'').trim(),status:'pending',createdAt:new Date().toISOString(),createdAtServer:serverTimestamp()},extra));return id};
 async function mergeFirebaseReports(){var snap=await getDocs(collection(fbDb,'reports')),remote=snap.docs.map(function(x){return x.data()}).filter(function(x){return x&&x.id}),raw=localStorage.getItem(fbStore),local=raw?JSON.parse(raw):{},byId={};(local.reports||[]).forEach(function(x){byId[x.id]=x});remote.forEach(function(x){byId[x.id]=x});local.reports=Object.keys(byId).map(function(k){return byId[k]}).sort(function(a,b){return new Date(b.createdAt)-new Date(a.createdAt)});localStorage.setItem(fbStore,JSON.stringify(local))}
 function authCard(){var app=document.getElementById('app'),myTab=document.querySelector('[data-page="my"].active');if(!app||!myTab||document.getElementById('firebaseAuthCard'))return;var card=document.createElement('section');card.id='firebaseAuthCard';card.className='card';card.innerHTML=signedUser?'<div class="spacer"><div><h2>'+((signedUser.displayName||'사용자'))+' 환영합니다.</h2><p class="muted">신고와 포인트를 계정에 저장하고 있습니다.</p></div><button class="outline" id="firebaseSignOut">로그아웃</button></div>':'<h2>내 기록 저장</h2><p class="muted">Google 계정으로 로그인하면 신고, 포인트, 참여 정보를 계정별로 저장할 수 있어요.</p><button id="firebaseSignIn">Google로 로그인</button>';app.insertBefore(card,app.firstChild);var si=document.getElementById('firebaseSignIn'),so=document.getElementById('firebaseSignOut');if(si)si.onclick=async()=>{try{await signInWithPopup(fbAuth,new GoogleAuthProvider())}catch(e){alert('Google 로그인에 실패했습니다: '+e.message)}};if(so)so.onclick=()=>signOut(fbAuth)}
 async function restoreOrCreate(u){var ref=doc(fbDb,'users',u.uid),restoredKey='badajupgo_restored_'+u.uid,snap=await getDoc(ref);if(snap.exists()&&snap.data().appData){if(sessionStorage.getItem(restoredKey)!=='yes'){sessionStorage.setItem(restoredKey,'yes');localStorage.setItem(fbStore,JSON.stringify(snap.data().appData));location.reload();return}}else{var raw=localStorage.getItem(fbStore);await setDoc(ref,{uid:u.uid,email:u.email||'',displayName:u.displayName||'',appData:raw?JSON.parse(raw):{},updatedAt:serverTimestamp()},{merge:true})}}
 const rawSet=localStorage.setItem.bind(localStorage);localStorage.setItem=function(k,v){rawSet(k,v);if(k===fbStore&&signedUser){try{setDoc(doc(fbDb,'users',signedUser.uid),{uid:signedUser.uid,email:signedUser.email||'',displayName:signedUser.displayName||'',appData:JSON.parse(v),updatedAt:serverTimestamp()},{merge:true})}catch(e){}}};
-onAuthStateChanged(fbAuth,async u=>{signedUser=u||null;window.firebaseSignedIn=!!u;try{if(u)await restoreOrCreate(u);await mergeFirebaseReports()}catch(e){console.warn(e);if(u)alert('Firebase 데이터 동기화 오류: '+e.message)}document.getElementById('firebaseAuthCard')?.remove();authCard()});
+onAuthStateChanged(fbAuth,async u=>{signedUser=u||null;window.firebaseSignedIn=!!u;window.firebaseUserId=u?u.uid:'';window.firebaseUserEmail=u?(u.email||''):'';try{if(u)await restoreOrCreate(u);await mergeFirebaseReports()}catch(e){console.warn(e);if(u)alert('Firebase 데이터 동기화 오류: '+e.message)}document.getElementById('firebaseAuthCard')?.remove();authCard()});
 document.addEventListener('click',()=>setTimeout(authCard,80));
 </script><script>
 /* Clear login / sign-up entry point for the My Page screen. */
@@ -340,6 +340,35 @@ document.addEventListener('click',()=>setTimeout(authCard,80));
   }
   document.addEventListener('click',function(){setTimeout(updateProfileAccess,100)});
   setInterval(updateProfileAccess,350);
+}());
+</script>
+<script>
+/* My records: only the signed-in user's reports and cleaning verifications. */
+(function(){
+  var STORE='cleanSeaBusan_safe_v2';
+  function escapeHtml(value){return String(value||'').replace(/[&<>'"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]})}
+  function label(state){return state==='approved'?'승인됨':state==='rejected'?'반려됨':state==='pending'?'검토 중':'상태 확인 중'}
+  function read(){try{return JSON.parse(localStorage.getItem(STORE))||{reports:[],verifications:[]}}catch(e){return {reports:[],verifications:[]}}}
+  function render(){
+    var app=document.getElementById('app'),tab=document.querySelector('[data-page="my"].active');
+    if(!app||!tab)return;
+    var old=document.getElementById('myRecordsCard');if(old)old.remove();
+    var card=document.createElement('section');card.id='myRecordsCard';card.className='card';
+    if(!window.firebaseSignedIn||!window.firebaseUserId){
+      card.innerHTML='<h2>나의 신고·청소 내역</h2><p class="muted">Google 로그인 후 본인이 등록한 신고와 청소 인증 내역을 확인할 수 있습니다.</p>';
+    }else{
+      var d=read(),userId=window.firebaseUserId,reports=(Array.isArray(d.reports)?d.reports:[]).filter(function(r){return r.reporterId===userId}),byReport={};
+      reports.forEach(function(r){byReport[r.id]=r});
+      var verifications=(Array.isArray(d.verifications)?d.verifications:[]).filter(function(v){return v.reporterId===userId||(!v.reporterId&&!!byReport[v.reportId])});
+      var reportRows=reports.length?reports.map(function(r){return '<div class="item"><img class="thumb" src="'+escapeHtml(r.image)+'" alt="신고 사진"><div style="flex:1"><b>'+escapeHtml(r.district)+' · '+escapeHtml(r.trashType)+'</b><br><span class="tag '+escapeHtml(r.status)+'">'+(r.status==='cleaned'?'청소 완료':r.status==='reviewing'?'청소 인증 검토 중':'신고 접수')+'</span><br><small>'+new Date(r.createdAt).toLocaleString('ko-KR')+'</small></div></div>'}).join(''):'<div class="empty">내가 등록한 신고가 없습니다.</div>';
+      var verifyRows=verifications.length?verifications.map(function(v){var r=byReport[v.reportId]||{},reason=v.rejectionReason?'<br><small>반려 사유: '+escapeHtml(v.rejectionReason)+'</small>':'';return '<div class="item"><img class="thumb" src="'+escapeHtml(v.afterImage||v.beforeImage||'')+'" alt="청소 인증 사진"><div style="flex:1"><b>'+escapeHtml(r.district||'청소 인증')+'</b><br><span class="tag '+(v.status==='rejected'?'reported':v.status==='approved'?'cleaned':'reviewing')+'">'+label(v.status)+'</span>'+reason+'<br><small>'+new Date(v.createdAt).toLocaleString('ko-KR')+'</small>'+(v.status==='rejected'?'<br><button class="outline appeal-verification" data-id="'+escapeHtml(v.id)+'" style="margin-top:8px">관리자에게 이의신청</button>':'')+'</div></div>'}).join(''):'<div class="empty">내 청소 인증 내역이 없습니다.</div>';
+      card.innerHTML='<h2>나의 신고·청소 내역</h2><h3>내가 신고한 내역</h3>'+reportRows+'<h3 style="margin-top:18px">내 청소 인증 내역</h3><p class="muted">반려된 인증에만 관리자 이의신청이 가능합니다.</p>'+verifyRows;
+      card.querySelectorAll('.appeal-verification').forEach(function(button){button.onclick=async function(){var verification=verifications.find(function(v){return v.id===button.dataset.id});if(!verification)return;var message=prompt('이의신청 내용을 입력해 주세요.');if(message===null)return;message=message.trim();if(message.length<5){alert('이의신청 내용은 5자 이상 입력해 주세요.');return}button.disabled=true;try{await window.firebaseSubmitAppeal(message,{verificationId:verification.id,reportId:verification.reportId,type:'verification-rejection',rejectionReason:verification.rejectionReason||''});alert('이의신청이 접수되었습니다. 관리자가 확인 후 처리합니다.')}catch(e){alert(e.message==='login-required'?'Google 로그인 후 제출할 수 있습니다.':'이의신청을 제출하지 못했습니다. 잠시 후 다시 시도해 주세요.')}finally{button.disabled=false}}});
+    }
+    var anchor=document.getElementById('orderedParticipationCard')||document.getElementById('profileExtras');
+    if(anchor)anchor.insertAdjacentElement('afterend',card);else app.appendChild(card);
+  }
+  document.addEventListener('click',function(){setTimeout(render,120)});setInterval(render,700);setTimeout(render,200);
 }());
 </script>
 <script>
@@ -612,7 +641,7 @@ input:focus,select:focus,textarea:focus{outline:3px solid #35c5d22e;border-color
           trashType:document.getElementById('safeType').value,
           trashAmount:document.getElementById('safeAmount').value,
           description:document.getElementById('safeDesc').value,
-          status:'reported',createdAt:new Date().toISOString()
+          status:'reported',reporterId:window.firebaseUserId||'',reporterEmail:window.firebaseUserEmail||'',createdAt:new Date().toISOString()
         });
         localStorage.setItem(STORE,JSON.stringify(d));
         notice('\uc2e0\uace0\uac00 \ub4f1\ub85d\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc9c0\ub3c4\uc5d0\uc11c \uc704\uce58\ub97c \ud655\uc778\ud574 \uc8fc\uc138\uc694.');
@@ -681,7 +710,7 @@ input:focus,select:focus,textarea:focus{outline:3px solid #35c5d22e;border-color
           trashType:document.getElementById('safeType').value,
           trashAmount:document.getElementById('safeAmount').value,
           description:document.getElementById('safeDesc').value,
-          status:'reported',createdAt:new Date().toISOString()
+          status:'reported',reporterId:window.firebaseUserId||'',reporterEmail:window.firebaseUserEmail||'',createdAt:new Date().toISOString()
         });
         localStorage.setItem(STORE,JSON.stringify(d));
         if(window.firebaseSyncReport)window.firebaseSyncReport(d.reports[0]).catch(function(){});
@@ -747,7 +776,7 @@ input:focus,select:focus,textarea:focus{outline:3px solid #35c5d22e;border-color
     shrink(file,function(image){
       try{
         d.verifications=Array.isArray(d.verifications)?d.verifications:[];
-        d.verifications.unshift({id:'verify_'+Date.now(),reportId:candidate.id,beforeImage:candidate.image,afterImage:image,latitude:lat,longitude:lng,distance:nearest,description:document.getElementById('verifyDesc').value,status:'pending',createdAt:new Date().toISOString()});
+        d.verifications.unshift({id:'verify_'+Date.now(),reportId:candidate.id,beforeImage:candidate.image,afterImage:image,latitude:lat,longitude:lng,distance:nearest,description:document.getElementById('verifyDesc').value,status:'pending',reporterId:window.firebaseUserId||'',reporterEmail:window.firebaseUserEmail||'',createdAt:new Date().toISOString()});
         candidate.status='reviewing';
         localStorage.setItem(STORE,JSON.stringify(d));
         if(window.firebaseQueueVerification)window.firebaseQueueVerification(d.verifications[0]).catch(function(){});
