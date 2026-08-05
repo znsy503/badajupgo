@@ -291,4 +291,9 @@ body{background:linear-gradient(180deg,#e9f8fb 0,#f4f8fa 28%,#eef8f9 100%)}
 </script><script>
 /* Remove the legacy residence controls from the participation card entirely. */
 (function(){function removeLegacy(){var field=document.getElementById('firstRunResidence');if(!field)return;var label=field.previousElementSibling;if(label&&label.tagName==='LABEL')label.remove();field.remove()}document.addEventListener('click',function(){setTimeout(removeLegacy,120)});setInterval(removeLegacy,300)}());
-</script></body></html>
+</script><style>
+/* The participation card must only show the participation count. */
+#firstRunResidence,
+label:has(+ #firstRunResidence),
+#firstRunResidence~small{display:none!important}
+</style></body></html>
