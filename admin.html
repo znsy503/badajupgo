@@ -9,4 +9,21 @@ function dashboard(){let d=load();if(!d){app.innerHTML='<section class="card emp
 function approve(id){let d=load(),v=d.verifications.find(x=>x.id===id);if(!v||v.status!=='pending'||!confirm('이 인증을 승인하고 100P를 지급할까요?'))return;v.status='approved';v.reviewedAt=new Date().toISOString();let r=d.reports.find(x=>x.id===v.reportId);if(r){r.status='cleaned';r.cleanedAt=new Date().toISOString()}if(!v.rewardPaid){v.rewardPaid=true;d.user.points=(d.user.points||0)+100;d.user.totalEarned=(d.user.totalEarned||0)+100}save(d);alert('승인했습니다.');dashboard()}
 function reject(id){let d=load(),v=d.verifications.find(x=>x.id===id),reason=prompt('반려 사유를 입력해 주세요.');if(!v||v.status!=='pending'||reason===null)return;v.status='rejected';v.rejectionReason=reason;v.reviewedAt=new Date().toISOString();let r=d.reports.find(x=>x.id===v.reportId);if(r)r.status='reported';save(d);alert('반려했습니다.');dashboard()}
 function logout(){sessionStorage.removeItem('badaAdmin');login()}if(sessionStorage.getItem('badaAdmin')==='yes')dashboard();else login();
+</script><script type="module">
+import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
+import {getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+import {getFirestore,collection,getDocs,query,where,updateDoc,doc} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
+const appFb=initializeApp({apiKey:'AIzaSyCD8ZA1uYLPp_DOPsuOj71L9QdawK6cJP8',authDomain:'badajupgo.firebaseapp.com',projectId:'badajupgo',storageBucket:'badajupgo.firebasestorage.app',messagingSenderId:'713258815679',appId:'1:713258815679:web:7a07ac801a4dba3e7cf60a'});
+const authFb=getAuth(appFb),dbFb=getFirestore(appFb),ADMIN_EMAIL='admin@badajupgo.local',ADMIN_PASS='bada2026!';
+window.firebaseAdminLogin=async function(){try{await signInWithEmailAndPassword(authFb,ADMIN_EMAIL,ADMIN_PASS)}catch(e){if(e.code==='auth/user-not-found')await createUserWithEmailAndPassword(authFb,ADMIN_EMAIL,ADMIN_PASS);else throw e}};
+window.dashboard=async function(){
+  if(!authFb.currentUser){app.innerHTML='<section class="card empty">관리자 인증을 준비하고 있습니다.</section>';return}
+  try{
+    const snap=await getDocs(query(collection(dbFb,'reviewRequests'),where('status','==','pending'))),list=snap.docs.map(x=>Object.assign({id:x.id},x.data()));
+    app.innerHTML='<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>청소 인증 검토</h2><span class="tag">'+list.length+'건 대기</span></div><p class="notice">모바일에서 제출된 인증 요청입니다.</p></section>'+(list.length?list.map(v=>'<section class="card"><div class="grid"><div><small>신고 전 사진</small><img class="photo" src="'+(v.beforeImage||'')+'"></div><div><small>청소 후 사진</small><img class="photo" src="'+(v.afterImage||'')+'"></div></div><p><b>'+e(v.reportId)+'</b><br><span class="muted">인증 거리: '+fmt(v.distance)+'m</span><br>'+e(v.description)+'</p><button onclick="window.reviewDecision(\\''+v.id+'\\',\\'approved\\')">승인 · 100P 지급</button> <button class="danger" onclick="window.reviewDecision(\\''+v.id+'\\',\\'rejected\\')">반려</button></section>').join(''):'<section class="card empty">검토 대기 중인 청소 인증이 없습니다.</section>')+'<section class="card"><button class="outline" onclick="logout()">로그아웃</button></section>';
+  }catch(err){app.innerHTML='<section class="card empty">검토 요청을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</section>'}
+};
+window.reviewDecision=async function(id,status){await updateDoc(doc(dbFb,'reviewRequests',id),{status:status,reviewedAt:new Date().toISOString()});dashboard()};
+var enterBtn=document.getElementById('enter');
+if(enterBtn)enterBtn.onclick=async function(){if(pass.value!==PASS){alert('암호가 올바르지 않습니다.');return}try{await window.firebaseAdminLogin();sessionStorage.setItem('badaAdmin','yes');dashboard()}catch(e){alert('관리자 인증에 실패했습니다: '+e.message)}};
 </script></main></body></html>
