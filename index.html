@@ -326,7 +326,7 @@ document.addEventListener('click',()=>setTimeout(authCard,80));
     if(!app||!tab)return;
     document.getElementById('profileGoogleLogin')?.remove();
     if(window.firebaseSignedIn){if(profile)profile.style.display='';document.getElementById('preLoginOnly')?.remove();return;}
-    if(profile)profile.style.display='none';
+    if(profile)profile.style.display='';
     if(document.getElementById('preLoginOnly'))return;
     var card=document.createElement('section');
     card.id='preLoginOnly';card.className='card';
@@ -336,5 +336,35 @@ document.addEventListener('click',()=>setTimeout(authCard,80));
   }
   document.addEventListener('click',function(){setTimeout(updateProfileAccess,100)});
   setInterval(updateProfileAccess,350);
+}());
+</script>
+<script>
+/* Profile fields act as a Google-login entry point until the user is signed in. */
+(function(){
+  function askToSignIn(e){
+    if(window.firebaseSignedIn)return;
+    e.preventDefault();e.stopImmediatePropagation();
+    if(typeof window.firebaseGoogleLogin==='function'){
+      window.firebaseGoogleLogin().catch(function(err){alert('Google login could not be completed: '+err.message)});
+    }
+  }
+  function applyProfileAccess(){
+    var tab=document.querySelector('[data-page="my"].active'),profile=document.getElementById('userProfileCard');
+    if(!tab||!profile)return;
+    document.getElementById('preLoginOnly')?.remove();
+    document.getElementById('profileGoogleLogin')?.remove();
+    profile.style.display='';
+    var signed=!!window.firebaseSignedIn;
+    profile.querySelectorAll('input').forEach(function(input){if(input.type==='file')input.disabled=!signed;else input.readOnly=!signed;});
+    var photoLabel=profile.querySelector('label[for="profilePhotoInput"]');
+    if(photoLabel)photoLabel.style.cursor=signed?'pointer':'pointer';
+    if(!profile.dataset.loginGuard){
+      profile.addEventListener('click',askToSignIn,true);
+      profile.addEventListener('focusin',askToSignIn,true);
+      profile.dataset.loginGuard='yes';
+    }
+  }
+  document.addEventListener('click',function(){setTimeout(applyProfileAccess,120)});
+  setInterval(applyProfileAccess,350);
 }());
 </script>
