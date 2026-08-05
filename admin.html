@@ -1,29 +1,66 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>바다줍Go 관리자 콘솔</title><style>
-:root{--p:#087E8B;--danger:#E63946;--ok:#2A9D55;--bg:#f4f8fa;--text:#18323d;--border:#dce6ea}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif}.head{background:#18323d;color:white;padding:22px 16px}.wrap{max-width:850px;margin:auto;padding:16px}.card{background:#fff;border:1px solid var(--border);border-radius:15px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #18323d0a}h1{font-size:24px;margin:0}h2{font-size:19px;margin:2px 0 12px}p{line-height:1.55}button,input{font:inherit}button{min-height:44px;padding:0 14px;border:0;border-radius:10px;background:var(--p);color:#fff;font-weight:700;cursor:pointer}.danger{background:var(--danger)}.outline{background:#fff;color:var(--p);border:1px solid var(--p)}input{width:100%;min-height:44px;border:1px solid var(--border);border-radius:10px;padding:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.photo{width:100%;height:180px;object-fit:cover;border-radius:10px;background:#e8f0f2}.tag{display:inline-block;padding:4px 9px;border-radius:20px;background:#fff4d7;color:#765300;font-size:12px;font-weight:bold}.notice{padding:12px;background:#edf9fa;border-left:4px solid var(--p);border-radius:6px}.muted{color:#667881}.empty{text-align:center;padding:32px;color:#667881}@media(max-width:550px){.grid{grid-template-columns:1fr}.photo{height:150px}}
-</style></head><body><header class="head"><div class="wrap"><h1>바다줍Go 관리자 콘솔</h1><p style="margin:7px 0 0;opacity:.85">청소 인증 검토 전용 화면</p></div></header><main id="app" class="wrap"></main><script>
-const KEY='cleanSeaBusan_safe_v2', PASS='bada2026!';
-const e=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function load(){try{return JSON.parse(localStorage.getItem(KEY))}catch{return null}}function save(d){localStorage.setItem(KEY,JSON.stringify(d))}function fmt(n){return Number(n||0).toLocaleString('ko-KR')}
-function login(){app.innerHTML='<section class="card"><h2>관리자 로그인</h2><p class="muted">청소 인증 검토 권한이 있는 운영자만 접속할 수 있습니다.</p><label for="pass">관리자 암호</label><div style="display:flex;gap:8px"><input id="pass" type="password" autocomplete="current-password"><button id="showPass" type="button" class="outline" aria-label="비밀번호 표시" title="비밀번호 표시" style="width:46px;padding:0;display:grid;place-items:center"><svg id="eyeIcon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg></button></div><button id="enter" style="width:100%;margin-top:12px">로그인</button></section>';showPass.onclick=()=>{let visible=pass.type==='text';pass.type=visible?'password':'text';showPass.innerHTML=visible?'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 10.6a2 2 0 0 0 2.8 2.8"/><path d="M9.9 4.2A10.7 10.7 0 0 1 12 4c6.5 0 10 6 10 6a18 18 0 0 1-3.1 4.1M6.2 6.2C3.6 8 2 10 2 10s3.5 6 10 6a10 10 0 0 0 3-.4"/></svg>':'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.6"/></svg>';showPass.setAttribute('aria-label',visible?'비밀번호 표시':'비밀번호 숨김');showPass.title=visible?'비밀번호 표시':'비밀번호 숨김'};enter.onclick=()=>{if(pass.value===PASS){sessionStorage.setItem('badaAdmin','yes');dashboard()}else alert('암호가 올바르지 않습니다.')}}
-function dashboard(){let d=load();if(!d){app.innerHTML='<section class="card empty">사용자 데이터가 없습니다. 먼저 사용자 화면에서 신고 또는 청소 인증을 등록해 주세요.</section>';return}let list=(d.verifications||[]).filter(v=>v.status==='pending');app.innerHTML='<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>청소 인증 검토</h2><span class="tag">'+list.length+'건 대기</span></div><p class="notice">신고 전·후 사진, 위치 거리, 설명을 확인한 뒤 처리하세요. 승인 시 신고가 청소 완료로 바뀌고 100P가 지급됩니다.</p></section>'+(list.length?list.map(v=>{let r=(d.reports||[]).find(x=>x.id===v.reportId)||{};return '<section class="card"><div class="grid"><div><small>신고 전 사진</small><img class="photo" src="'+(v.beforeImage||r.image||'')+'" alt="신고 전 사진"></div><div><small>청소 후 사진</small><img class="photo" src="'+(v.afterImage||'')+'" alt="청소 후 사진"></div></div><p><b>'+e(r.district)+' · '+e(r.trashType)+'</b><br><span class="muted">인증 거리: '+fmt(v.distance)+'m · 제출: '+new Date(v.createdAt).toLocaleString('ko-KR')+'</span><br>'+e(v.description)+'</p><button onclick="approve(\''+v.id+'\')">승인 · 100P 지급</button> <button class="danger" onclick="reject(\''+v.id+'\')">반려</button></section>'}).join(''):'<section class="card empty">검토 대기 중인 청소 인증이 없습니다.</section>')+'<section class="card"><button class="outline" onclick="logout()">로그아웃</button> <a href="index.html" style="margin-left:10px;color:#087E8B">사용자 화면으로</a></section>'}
-function approve(id){let d=load(),v=d.verifications.find(x=>x.id===id);if(!v||v.status!=='pending'||!confirm('이 인증을 승인하고 100P를 지급할까요?'))return;v.status='approved';v.reviewedAt=new Date().toISOString();let r=d.reports.find(x=>x.id===v.reportId);if(r){r.status='cleaned';r.cleanedAt=new Date().toISOString()}if(!v.rewardPaid){v.rewardPaid=true;d.user.points=(d.user.points||0)+100;d.user.totalEarned=(d.user.totalEarned||0)+100}save(d);alert('승인했습니다.');dashboard()}
-function reject(id){let d=load(),v=d.verifications.find(x=>x.id===id),reason=prompt('반려 사유를 입력해 주세요.');if(!v||v.status!=='pending'||reason===null)return;v.status='rejected';v.rejectionReason=reason;v.reviewedAt=new Date().toISOString();let r=d.reports.find(x=>x.id===v.reportId);if(r)r.status='reported';save(d);alert('반려했습니다.');dashboard()}
-function logout(){sessionStorage.removeItem('badaAdmin');login()}if(sessionStorage.getItem('badaAdmin')==='yes')dashboard();else login();
-</script><script type="module">
-import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
-import {getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
-import {getFirestore,collection,getDocs,query,where,updateDoc,doc} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
-const appFb=initializeApp({apiKey:'AIzaSyCD8ZA1uYLPp_DOPsuOj71L9QdawK6cJP8',authDomain:'badajupgo.firebaseapp.com',projectId:'badajupgo',storageBucket:'badajupgo.firebasestorage.app',messagingSenderId:'713258815679',appId:'1:713258815679:web:7a07ac801a4dba3e7cf60a'});
-const authFb=getAuth(appFb),dbFb=getFirestore(appFb),ADMIN_EMAIL='admin@badajupgo.local',ADMIN_PASS='bada2026!';
-window.firebaseAdminLogin=async function(){try{await signInWithEmailAndPassword(authFb,ADMIN_EMAIL,ADMIN_PASS)}catch(e){if(e.code==='auth/user-not-found')await createUserWithEmailAndPassword(authFb,ADMIN_EMAIL,ADMIN_PASS);else throw e}};
-window.dashboard=async function(){
-  if(!authFb.currentUser){app.innerHTML='<section class="card empty">관리자 인증을 준비하고 있습니다.</section>';return}
-  try{
-    const snap=await getDocs(query(collection(dbFb,'reviewRequests'),where('status','==','pending'))),list=snap.docs.map(x=>Object.assign({id:x.id},x.data()));
-    app.innerHTML='<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>청소 인증 검토</h2><span class="tag">'+list.length+'건 대기</span></div><p class="notice">모바일에서 제출된 인증 요청입니다.</p></section>'+(list.length?list.map(v=>'<section class="card"><div class="grid"><div><small>신고 전 사진</small><img class="photo" src="'+(v.beforeImage||'')+'"></div><div><small>청소 후 사진</small><img class="photo" src="'+(v.afterImage||'')+'"></div></div><p><b>'+e(v.reportId)+'</b><br><span class="muted">인증 거리: '+fmt(v.distance)+'m</span><br>'+e(v.description)+'</p><button onclick="window.reviewDecision(\\''+v.id+'\\',\\'approved\\')">승인 · 100P 지급</button> <button class="danger" onclick="window.reviewDecision(\\''+v.id+'\\',\\'rejected\\')">반려</button></section>').join(''):'<section class="card empty">검토 대기 중인 청소 인증이 없습니다.</section>')+'<section class="card"><button class="outline" onclick="logout()">로그아웃</button></section>';
-  }catch(err){app.innerHTML='<section class="card empty">검토 요청을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</section>'}
-};
-window.reviewDecision=async function(id,status){await updateDoc(doc(dbFb,'reviewRequests',id),{status:status,reviewedAt:new Date().toISOString()});dashboard()};
-var enterBtn=document.getElementById('enter');
-if(enterBtn)enterBtn.onclick=async function(){if(pass.value!==PASS){alert('암호가 올바르지 않습니다.');return}try{await window.firebaseAdminLogin();sessionStorage.setItem('badaAdmin','yes');dashboard()}catch(e){alert('관리자 인증에 실패했습니다: '+e.message)}};
-</script></main></body></html>
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>바다줍Go 관리자 콘솔</title>
+  <style>
+    :root{--p:#087e8b;--danger:#e63946;--bg:#f4f8fa;--text:#18323d;--border:#dce6ea}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif}.head{background:linear-gradient(120deg,#075c68,#087e8b);color:#fff;padding:22px 16px}.wrap{max-width:850px;margin:auto;padding:16px}.card{background:#fff;border:1px solid var(--border);border-radius:15px;padding:16px;margin:12px 0;box-shadow:0 2px 8px #18323d0a}h1{font-size:24px;margin:0}h2{font-size:19px;margin:2px 0 12px}p{line-height:1.55}button,input{font:inherit}button{min-height:44px;padding:0 14px;border:0;border-radius:10px;background:var(--p);color:#fff;font-weight:700;cursor:pointer}.danger{background:var(--danger)}.outline{background:#fff;color:var(--p);border:1px solid var(--p)}input{width:100%;min-height:44px;border:1px solid var(--border);border-radius:10px;padding:10px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.photo{width:100%;height:180px;object-fit:cover;border-radius:10px;background:#e8f0f2}.tag{display:inline-block;padding:4px 9px;border-radius:20px;background:#fff4d7;color:#765300;font-size:12px;font-weight:700}.notice{padding:12px;background:#edf9fa;border-left:4px solid var(--p);border-radius:6px}.muted{color:#667881}.empty{text-align:center;padding:32px;color:#667881}@media(max-width:550px){.grid{grid-template-columns:1fr}.photo{height:150px}}
+  </style>
+</head>
+<body>
+  <header class="head"><div class="wrap"><h1>바다줍Go 관리자 콘솔</h1><p style="margin:7px 0 0;opacity:.85">청소 인증 검토 전용 화면</p></div></header>
+  <main id="app" class="wrap"></main>
+  <script type="module">
+    import {initializeApp} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js';
+    import {getAuth,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js';
+    import {getFirestore,collection,getDocs,query,where,updateDoc,doc} from 'https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js';
+
+    const config={apiKey:'AIzaSyCD8ZA1uYLPp_DOPsuOj71L9QdawK6cJP8',authDomain:'badajupgo.firebaseapp.com',projectId:'badajupgo',storageBucket:'badajupgo.firebasestorage.app',messagingSenderId:'713258815679',appId:'1:713258815679:web:7a07ac801a4dba3e7cf60a'};
+    const auth=getAuth(initializeApp(config)),db=getFirestore();
+    const ADMIN_EMAIL='admin@badajupgo.local',ADMIN_PASSWORD='bada2026!';
+    const app=document.getElementById('app');
+    const esc=value=>String(value||'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+    const distance=value=>Number(value||0).toLocaleString('ko-KR');
+
+    function loginView(){
+      app.innerHTML='<section class="card"><h2>관리자 로그인</h2><p class="muted">청소 인증 검토 권한이 있는 운영자만 접속할 수 있습니다.</p><label for="password">관리자 암호</label><div style="display:flex;gap:8px"><input id="password" type="password" autocomplete="current-password"><button id="togglePassword" type="button" class="outline" aria-label="비밀번호 표시" title="비밀번호 표시" style="width:46px;padding:0">◉</button></div><button id="loginButton" style="width:100%;margin-top:12px">로그인</button></section>';
+      const password=document.getElementById('password');
+      document.getElementById('togglePassword').onclick=()=>{password.type=password.type==='password'?'text':'password'};
+      document.getElementById('loginButton').onclick=login;
+    }
+
+    async function login(){
+      const password=document.getElementById('password').value;
+      if(password!==ADMIN_PASSWORD){alert('암호가 올바르지 않습니다.');return}
+      try{
+        await signInWithEmailAndPassword(auth,ADMIN_EMAIL,ADMIN_PASSWORD);
+      }catch(error){
+        if(error.code==='auth/user-not-found') await createUserWithEmailAndPassword(auth,ADMIN_EMAIL,ADMIN_PASSWORD);
+        else {alert('관리자 인증에 실패했습니다: '+error.message);return}
+      }
+      await dashboard();
+    }
+
+    async function dashboard(){
+      if(!auth.currentUser){loginView();return}
+      app.innerHTML='<section class="card empty">검토 요청을 불러오는 중입니다.</section>';
+      try{
+        const snapshot=await getDocs(query(collection(db,'reviewRequests'),where('status','==','pending')));
+        const requests=snapshot.docs.map(item=>({id:item.id,...item.data()}));
+        app.innerHTML='<section class="card"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2>청소 인증 검토</h2><span class="tag">'+requests.length+'건 대기</span></div><p class="notice">모바일과 PC에서 제출된 인증 요청을 함께 표시합니다.</p></section>'+(requests.length?requests.map(request=>'<section class="card"><div class="grid"><div><small>신고 전 사진</small><img class="photo" src="'+esc(request.beforeImage)+'" alt="신고 전 사진"></div><div><small>청소 후 사진</small><img class="photo" src="'+esc(request.afterImage)+'" alt="청소 후 사진"></div></div><p><b>신고 번호: '+esc(request.reportId)+'</b><br><span class="muted">인증 거리: '+distance(request.distance)+'m · 제출: '+esc(new Date(request.createdAt).toLocaleString('ko-KR'))+'</span><br>'+esc(request.description)+'</p><button data-action="approved" data-id="'+esc(request.id)+'">승인</button> <button class="danger" data-action="rejected" data-id="'+esc(request.id)+'">반려</button></section>').join(''):'<section class="card empty">검토 대기 중인 청소 인증이 없습니다.</section>')+'<section class="card"><button class="outline" id="logoutButton">로그아웃</button> <a href="index.html" style="margin-left:10px;color:#087e8b">사용자 화면으로</a></section>';
+        document.querySelectorAll('[data-action]').forEach(button=>button.onclick=()=>review(button.dataset.id,button.dataset.action));
+        document.getElementById('logoutButton').onclick=async()=>{await signOut(auth);loginView()};
+      }catch(error){
+        app.innerHTML='<section class="card empty">검토 요청을 불러오지 못했습니다.<br><small>'+esc(error.message)+'</small></section>';
+      }
+    }
+
+    async function review(id,status){
+      if(!confirm(status==='approved'?'이 인증을 승인할까요?':'이 인증을 반려할까요?')) return;
+      try{await updateDoc(doc(db,'reviewRequests',id),{status,reviewedAt:new Date().toISOString()});await dashboard()}catch(error){alert('처리하지 못했습니다: '+error.message)}
+    }
+    loginView();
+  </script>
+</body>
+</html>
