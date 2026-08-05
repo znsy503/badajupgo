@@ -368,3 +368,25 @@ document.addEventListener('click',()=>setTimeout(authCard,80));
   setInterval(applyProfileAccess,350);
 }());
 </script>
+<style>#profileGoogleLogin{display:none!important}</style>
+<script>
+/* Keep account actions separate from profile settings. */
+(function(){
+  function drawLogout(){
+    var app=document.getElementById('app'),tab=document.querySelector('[data-page="my"].active');
+    if(!app||!tab)return;
+    var existing=document.getElementById('logoutAtBottom');
+    if(!window.firebaseSignedIn){existing?.remove();return;}
+    if(existing)return;
+    var card=document.createElement('section');
+    card.id='logoutAtBottom';card.className='card';
+    card.innerHTML='<button class="outline" type="button" style="width:100%">&#xB85C;&#xADF8;&#xC544;&#xC6C3;</button>';
+    app.appendChild(card);
+    card.querySelector('button').onclick=function(){
+      if(typeof window.firebaseGoogleLogout==='function')window.firebaseGoogleLogout().catch(function(e){alert('Logout could not be completed: '+e.message)});
+    };
+  }
+  document.addEventListener('click',function(){setTimeout(drawLogout,120)});
+  setInterval(drawLogout,350);
+}());
+</script>
