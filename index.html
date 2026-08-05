@@ -534,3 +534,64 @@ input:focus,select:focus,textarea:focus{outline:3px solid #35c5d22e;border-color
 }
 @keyframes gentleBannerWave{from{background-position:0 0}to{background-position:360px 0}}
 </style>
+<script>
+/* Mobile-safe report submission: lock immediately, then show a clear completion message. */
+(function(){
+  var STORE='cleanSeaBusan_safe_v2',busyText='\uc2e0\uace0 \ucc98\ub9ac \uc911...';
+  function notice(text){
+    var toast=document.getElementById('toast');
+    if(!toast){alert(text);return}
+    toast.textContent=text;toast.style.display='block';
+    setTimeout(function(){toast.style.display='none'},3000);
+  }
+  function updateType(){
+    var type=document.getElementById('safeType');if(!type)return;
+    Array.prototype.forEach.call(type.options,function(option){
+      if(option.textContent==='\ub0a8\uc2dc \uc6a9\uad6c'){
+        option.value='\ud574\uc591 \ubd80\ud45c \ubc0f \ub85c\ud504';
+        option.textContent='\ud574\uc591 \ubd80\ud45c \ubc0f \ub85c\ud504';
+      }
+    });
+  }
+  function bindSafeSubmit(){
+    var form=document.getElementById('safeForm'),photo=document.getElementById('safePhoto');
+    if(!form||!photo||form.dataset.mobileSafeBound)return;
+    form.dataset.mobileSafeBound='yes';
+    form.onsubmit=function(e){
+      e.preventDefault();
+      if(form.dataset.submitting==='yes')return;
+      var file=photo.files&&photo.files[0];
+      if(!file){notice('\uc0ac\uc9c4\uc744 \uc120\ud0dd\ud574 \uc8fc\uc138\uc694.');return}
+      form.dataset.submitting='yes';
+      var submit=form.querySelector('button[type="submit"]');
+      if(submit){submit.disabled=true;submit.textContent=busyText}
+      var reader=new FileReader();
+      reader.onerror=function(){
+        form.dataset.submitting='';if(submit){submit.disabled=false;submit.textContent='\uc2e0\uace0 \ub4f1\ub85d'}
+        notice('\uc0ac\uc9c4\uc744 \uc77d\uc9c0 \ubabb\ud588\uc2b5\ub2c8\ub2e4. \ub2e4\uc2dc \uc2dc\ub3c4\ud574 \uc8fc\uc138\uc694.');
+      };
+      reader.onload=function(){
+        var d={};try{d=JSON.parse(localStorage.getItem(STORE))||{}}catch(err){}
+        d.reports=Array.isArray(d.reports)?d.reports:[];
+        d.user=d.user||{points:0,totalEarned:0,totalSpent:0};
+        d.reports.unshift({
+          id:'report_'+Date.now()+'_'+Math.random().toString(36).slice(2),
+          image:reader.result,district:document.getElementById('safeDistrict').value,
+          latitude:Number(document.getElementById('safeLat').value)||35.1796,
+          longitude:Number(document.getElementById('safeLng').value)||129.0756,
+          trashType:document.getElementById('safeType').value,
+          trashAmount:document.getElementById('safeAmount').value,
+          description:document.getElementById('safeDesc').value,
+          status:'reported',createdAt:new Date().toISOString()
+        });
+        localStorage.setItem(STORE,JSON.stringify(d));
+        notice('\uc2e0\uace0\uac00 \ub4f1\ub85d\ub418\uc5c8\uc2b5\ub2c8\ub2e4. \uc9c0\ub3c4\uc5d0\uc11c \uc704\uce58\ub97c \ud655\uc778\ud574 \uc8fc\uc138\uc694.');
+        setTimeout(function(){if(typeof window.cleanGo==='function')window.cleanGo('map')},650);
+      };
+      reader.readAsDataURL(file);
+    };
+  }
+  document.addEventListener('click',function(){setTimeout(function(){updateType();bindSafeSubmit()},80)});
+  setInterval(function(){updateType();bindSafeSubmit()},250);
+}());
+</script>
