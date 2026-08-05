@@ -299,4 +299,7 @@ label:has(+ #firstRunResidence),
 #userResidence,
 label:has(+ #userResidence),
 #userResidence~small{display:none!important}
-</style></body></html>
+</style><script>
+/* Deterministic My Page order: current points, point shop, participation. */
+(function(){var K='cleanSeaBusan_safe_v2';function render(){var app=document.getElementById('app'),tab=document.querySelector('[data-page="my"].active');if(!app||!tab)return;var old=app.querySelectorAll('.card h2');old.forEach(function(h){if(h.textContent.trim()==='\ub098\uc758 \ucc38\uc5ec \uc815\ubcf4'&&!h.closest('#orderedParticipationCard'))h.closest('.card').remove()});var card=document.getElementById('orderedParticipationCard');if(!card){var d={};try{d=JSON.parse(localStorage.getItem(K))||{}}catch(e){}var count=((d.verifications)||[]).filter(function(v){return v.status==='approved'}).length;card=document.createElement('section');card.id='orderedParticipationCard';card.className='card';card.innerHTML='<h2>\ub098\uc758 \ucc38\uc5ec \uc815\ubcf4</h2><div class="metric"><small>\uccad\uc18c \uc644\ub8cc \ucc38\uc5ec \ud69f\uc218</small><b>'+count+'\ud68c</b></div>';var shop=document.getElementById('basePointShopCard');if(shop)shop.insertAdjacentElement('afterend',card);else app.appendChild(card)}}document.addEventListener('click',function(){setTimeout(render,100)});setInterval(render,350)}());
+</script></body></html>
