@@ -479,3 +479,30 @@ input:focus,select:focus,textarea:focus{outline:3px solid #35c5d22e;border-color
   .top{padding:23px 12px 43px}.top h1{font-size:27px}.wrap{padding:15px 12px}.card{padding:16px;border-radius:18px}
 }
 </style>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@700&display=swap');
+/* Animated 50%-opacity waves within the banner. */
+.top{isolation:isolate}
+.top:before{
+  content:"";position:absolute;z-index:-1;left:-12%;bottom:1px;width:125%;height:104px;
+  opacity:.5;
+  background:
+    radial-gradient(42px 20px at 42px 20px,#d7ffff 98%,transparent 100%) 0 11px/84px 42px repeat-x,
+    radial-gradient(42px 20px at 42px 20px,#ffffff 98%,transparent 100%) 42px 33px/84px 42px repeat-x;
+  filter:drop-shadow(0 -2px 5px #caffff90);
+  animation:bannerWave 5.6s linear infinite;
+}
+.top:after{z-index:-1;background:#eaf7fa}
+@keyframes bannerWave{from{background-position:0 11px,42px 33px}to{background-position:84px 11px,126px 33px}}
+.top h1{
+  font-family:"Gaegu","Comic Sans MS",cursive;
+  font-size:39px;line-height:.9;letter-spacing:-.095em;
+  text-shadow:0 3px 0 #00576e,0 7px 14px #002e3e5a;
+  transform:rotate(-1.3deg);display:inline-block;
+}
+.top h1 small{
+  font-family:system-ui,sans-serif;font-size:11px;letter-spacing:.08em;
+  display:inline-block;transform:translate(7px,-7px) rotate(2deg);
+  padding:3px 7px;border:1px solid #c4ffff80;border-radius:99px;background:#ffffff1d;
+}
+</style>
